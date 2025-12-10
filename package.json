@@ -1,0 +1,47 @@
+{
+  "name": "@edgeone/astro",
+  "version": "1.0.4",
+  "description": "Astro adapter for EdgeOne Pages",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./dist/server.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "astro",
+    "adapter",
+    "edgeone",
+    "pages",
+    "ssr"
+  ],
+  "dependencies": {
+    "@vercel/nft": "^0.27.7"
+  },
+  "peerDependencies": {
+    "astro": "^5.0.0"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": "22.x"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
