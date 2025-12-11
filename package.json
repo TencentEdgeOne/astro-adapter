@@ -23,11 +23,17 @@
   },
   "keywords": [
     "astro",
+    "astro-adapter",
+    "astro-integration",
     "adapter",
     "edgeone",
-    "pages",
     "ssr"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TencentEdgeOne/astro-adapter.git"
+  },
+  "homepage": "https://pages.edgeone.ai/",
   "dependencies": {
     "@vercel/nft": "^0.27.7"
   },
