@@ -1,7 +1,7 @@
 {
   "name": "@edgeone/astro",
   "version": "1.0.4",
-  "description": "Astro adapter for EdgeOne Pages",
+  "description": "Deploy your Astro site to EdgeOne Pages with automatic dependency optimization",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,17 +23,19 @@
   },
   "keywords": [
     "astro",
+    "withastro",
     "astro-adapter",
     "astro-integration",
     "adapter",
     "edgeone",
+    "pages",
     "ssr"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/TencentEdgeOne/astro-adapter.git"
+    "url": "https://github.com/TencentEdgeOne/astro-adapter"
   },
-  "homepage": "https://pages.edgeone.ai/",
+  "homepage": "https://github.com/TencentEdgeOne/astro-adapter",
   "dependencies": {
     "@vercel/nft": "^0.27.7"
   },
