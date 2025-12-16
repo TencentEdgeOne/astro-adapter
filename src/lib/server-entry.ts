@@ -4,17 +4,15 @@
 
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DEFAULT_PORT } from './constants.js';
 
 /**
  * Create server entry file index.mjs
  */
 export function createServerEntryFile(
   serverDir: string,
-  serverEntryFile: string,
-  port: number = DEFAULT_PORT
+  serverEntryFile: string
 ): void {
-  const indexContent = generateServerEntryContent(serverEntryFile, port);
+  const indexContent = generateServerEntryContent(serverEntryFile);
   writeFileSync(join(serverDir, 'handler.js'), indexContent);
 }
 
@@ -23,7 +21,7 @@ export function createServerEntryFile(
 /**
  * Generate server entry file content
  */
-function generateServerEntryContent(serverEntryFile: string, port: number): string {
+function generateServerEntryContent(serverEntryFile: string): string {
   return `
 async function readRequestBody(req) {
   return new Promise((resolve, reject) => {

@@ -4,24 +4,23 @@
 
 import { existsSync, readdirSync, statSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Logger } from './types.js';
 
 /**
  * Optimize node_modules size.
  */
-export function optimizeNodeModules(serverDir: string, logger: Logger): void {
+export function optimizeNodeModules(serverDir: string): void {
   const nodeModulesPath = join(serverDir, 'node_modules');
   if (!existsSync(nodeModulesPath)) {
     return;
   }
   
-  cleanDirectory(nodeModulesPath, logger);
+  cleanDirectory(nodeModulesPath);
 }
 
 /**
  * Recursively traverse directories and remove unnecessary files.
  */
-function cleanDirectory(dir: string, logger: Logger): void {
+function cleanDirectory(dir: string): void {
   const unnecessaryPatterns = [
     /\.map$/,           // source maps
     /\.d\.ts$/,         // TypeScript declaration files

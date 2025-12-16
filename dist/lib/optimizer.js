@@ -6,17 +6,17 @@ import { join } from 'node:path';
 /**
  * Optimize node_modules size.
  */
-export function optimizeNodeModules(serverDir, logger) {
+export function optimizeNodeModules(serverDir) {
     const nodeModulesPath = join(serverDir, 'node_modules');
     if (!existsSync(nodeModulesPath)) {
         return;
     }
-    cleanDirectory(nodeModulesPath, logger);
+    cleanDirectory(nodeModulesPath);
 }
 /**
  * Recursively traverse directories and remove unnecessary files.
  */
-function cleanDirectory(dir, logger) {
+function cleanDirectory(dir) {
     const unnecessaryPatterns = [
         /\.map$/, // source maps
         /\.d\.ts$/, // TypeScript declaration files

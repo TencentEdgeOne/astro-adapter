@@ -1,6 +1,6 @@
 {
   "name": "@edgeone/astro",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Deploy your Astro site to EdgeOne Pages with automatic dependency optimization",
   "type": "module",
   "main": "./dist/index.js",

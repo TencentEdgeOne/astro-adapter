@@ -73,7 +73,7 @@ export default function edgeoneAdapter(
         });
       },
 
-      'astro:config:done': ({ setAdapter, config, buildOutput, logger }) => {
+      'astro:config:done': ({ setAdapter, config, buildOutput }) => {
         _config = config;
         _buildOutput = buildOutput;
         setAdapter(getAdapter());
@@ -88,7 +88,7 @@ export default function edgeoneAdapter(
         cleanOutputDirectory(edgeoneDir, ['project.json'], logger);
       },
 
-      'astro:build:done': async ({ dir, routes, logger }) => {
+      'astro:build:done': async ({ routes, logger }) => {
         const edgeoneDir = fileURLToPath(new URL(`./${outDir}/`, _config.root));
         const staticDir = fileURLToPath(new URL(`./${outDir}/${ASSETS_DIR}/`, _config.root));
         const serverDir = fileURLToPath(new URL(`./${outDir}/${SERVER_HANDLER_DIR}/`, _config.root));
@@ -147,11 +147,11 @@ export default function edgeoneAdapter(
           }
           
           // Analyze and copy dependencies
-          const { packageNames, fileList } = await analyzeDependencies(rootDir, serverDir, serverEntryFile, logger, _nftCache);
+          const { fileList } = await analyzeDependencies(rootDir, serverDir, serverEntryFile, logger, _nftCache);
           createSimpleServerPackageJson(serverDir);
           await copyDependencies(rootDir, serverDir, fileList, logger, extraIncludeFiles, excludeFiles);
           
-          optimizeNodeModules(serverDir, logger);
+          optimizeNodeModules(serverDir);
           createServerEntryFile(serverDir, serverEntryFile);
         }
 

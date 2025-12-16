@@ -2,14 +2,20 @@
  * Dependency analysis and copy utilities
  */
 
-import { cpSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
+import * as fs from 'node:fs/promises';
+import nodePath, { join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { nodeFileTrace } from '@vercel/nft';
 import { globSync } from 'tinyglobby';
 import type { Logger } from './types.js';
 
 /**
  * Analyze dependencies via @vercel/nft and return package names and file list
+ * @param rootDir - Project root directory
+ * @param serverDir - Server output directory
+ * @param serverEntryFile - Server entry file name
+ * @param logger - Logger instance
  * @param cache - Optional NFT cache object to speed up repeated analysis
  */
 export async function analyzeDependencies(
@@ -123,36 +129,89 @@ export async function analyzeDependencies(
 }
 
 /**
- * Copy dependencies
+ * Copy files to folder with symlink resolution (adapted from @astrojs/internal-helpers/fs)
+ * This handles pnpm's symlink structure by resolving real paths and creating relative symlinks
+ * 
+ * @param files - List of file URLs to copy
+ * @param outDir - Output directory URL
+ * @param baseDir - Base directory to calculate relative paths from (e.g., rootDir)
+ * @param exclude - List of file URLs to exclude
+ */
+async function copyFilesToFolder(
+  files: URL[],
+  outDir: URL,
+  baseDir: string,
+  exclude: URL[] = [],
+): Promise<void> {
+  const excludeList = exclude.map((url) => fileURLToPath(url));
+  const fileList = files.map((url) => fileURLToPath(url)).filter((f) => !excludeList.includes(f));
+
+  if (fileList.length === 0) {
+    return;
+  }
+
+  // Use baseDir as the common ancestor to preserve directory structure (e.g., node_modules/)
+  const commonAncestor = baseDir;
+
+  // Copy files with symlink handling
+  for (const origin of fileList) {
+    const dest = new URL(nodePath.relative(commonAncestor, origin), outDir);
+    const realpath = await fs.realpath(origin);
+    const isSymlink = realpath !== origin;
+    const isDir = (await fs.stat(origin)).isDirectory();
+
+    if (isDir && !isSymlink) {
+      await fs.mkdir(new URL('..', dest), { recursive: true });
+    } else {
+      await fs.mkdir(new URL('.', dest), { recursive: true });
+    }
+
+    if (isSymlink) {
+      const realdest = fileURLToPath(new URL(nodePath.relative(commonAncestor, realpath), outDir));
+      const target = nodePath.relative(fileURLToPath(new URL('.', dest)), realdest);
+      if (!existsSync(dest)) {
+        await fs.symlink(target, dest, isDir ? 'dir' : 'file');
+      }
+    } else if (!isDir) {
+      await fs.copyFile(origin, dest);
+    }
+  }
+}
+
+/**
+ * Copy dependencies using the same approach as @astrojs/vercel
  */
 export async function copyDependencies(
   rootDir: string,
   serverDir: string,
   fileList: Set<string>,
-  logger: Logger,
+  _logger: Logger,
   includeFiles: string[] = [],
-  excludeFiles: string[] = []
+  excludeFiles: string[] = [],
 ): Promise<void> {
-  const copiedFiles = new Set<string>();
-  let fileCount = 0;
-  
+  // Convert file list to URLs with rootDir as base
+  const base = pathToFileURL(rootDir.endsWith('/') ? rootDir : `${rootDir}/`);
+  const outDir = pathToFileURL(serverDir.endsWith('/') ? serverDir : `${serverDir}/`);
+
+  // Filter files: only node_modules and package.json
+  const filteredFiles: URL[] = [];
+
   for (const file of fileList) {
     const sourcePath = join(rootDir, file);
-    const targetPath = join(serverDir, file);
-    
-  // Skip files already under the server-handler directory
+
+    // Skip files already under the server-handler directory
     if (sourcePath.startsWith(serverDir)) {
       continue;
     }
-    
-  // Only process node_modules and package.json files
+
+    // Only process node_modules and package.json files
     if (!file.startsWith('node_modules/') && !file.endsWith('package.json')) {
       continue;
     }
-    
-  // Apply excludeFiles patterns
+
+    // Apply excludeFiles patterns
     if (excludeFiles.length > 0) {
-      const shouldExclude = excludeFiles.some(pattern => {
+      const shouldExclude = excludeFiles.some((pattern) => {
         const regex = new RegExp(pattern.replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*'));
         return regex.test(file);
       });
@@ -160,51 +219,32 @@ export async function copyDependencies(
         continue;
       }
     }
-    
-    if (existsSync(sourcePath) && !copiedFiles.has(file)) {
-      try {
-        mkdirSync(dirname(targetPath), { recursive: true });
-        cpSync(sourcePath, targetPath, { force: true });
-        copiedFiles.add(file);
-        fileCount++;
-      } catch (e) {
-        // Ignore individual file copy errors
-      }
+
+    if (existsSync(sourcePath)) {
+      filteredFiles.push(new URL(file, base));
     }
   }
-  
+
   // Handle includeFiles - force include patterns (from project root)
   if (includeFiles.length > 0) {
-    const additionalFiles = new Set<string>();
-    
-    // Use glob to find matched files
     for (const pattern of includeFiles) {
       try {
         const matched = globSync(pattern, { cwd: rootDir, absolute: false });
-        matched.forEach(file => additionalFiles.add(file));
-      } catch (e) {
-        logger.warn(`Failed to match pattern "${pattern}": ${e}`);
-      }
-    }
-    
-    // Copy additional files
-    for (const file of additionalFiles) {
-      if (!copiedFiles.has(file)) {
-        const sourcePath = join(rootDir, file);
-        const targetPath = join(serverDir, file);
-        
-        if (existsSync(sourcePath)) {
-          try {
-            mkdirSync(dirname(targetPath), { recursive: true });
-            cpSync(sourcePath, targetPath, { force: true });
-            copiedFiles.add(file);
-            fileCount++;
-          } catch (e) {
-            logger.warn(`Failed to copy ${file}: ${e}`);
+        for (const f of matched) {
+          const sourcePath = join(rootDir, f);
+          if (existsSync(sourcePath)) {
+            filteredFiles.push(new URL(f, base));
           }
         }
+      } catch {
+        // Ignore glob errors
       }
     }
+  }
+
+  // Copy files using the Vercel-style approach, preserving node_modules structure
+  if (filteredFiles.length > 0) {
+    await copyFilesToFolder(filteredFiles, outDir, rootDir, []);
   }
 }
 

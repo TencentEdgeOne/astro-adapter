@@ -4,5 +4,5 @@
 /**
  * Create server entry file index.mjs
  */
-export declare function createServerEntryFile(serverDir: string, serverEntryFile: string, port?: number): void;
+export declare function createServerEntryFile(serverDir: string, serverEntryFile: string): void;
 //# sourceMappingURL=server-entry.d.ts.map

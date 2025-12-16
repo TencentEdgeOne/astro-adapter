@@ -2,7 +2,7 @@
  * Configuration generation utilities.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import type { MetaConfig, RouteConfig } from './types.js';
 
