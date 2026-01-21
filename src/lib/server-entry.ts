@@ -45,7 +45,24 @@ const handlerPromise = import('./${serverEntryFile}');
 
 async  function astroHandler (req, res) {
   try {
-    const host = req.headers.host || 'localhost';
+    let host = req.headers.host || 'localhost';
+    const origin = req.headers.origin;
+    
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        host = originUrl.host;
+      } catch (e) {
+        // 如果 Origin 头格式不正确，fallback 到原来的逻辑
+        console.warn('Failed to parse Origin header:', origin);
+      }
+    }
+    
+    // 如果存在 eo-pages-host，优先使用它（这是 EdgeOne 提供的真实 host）
+    if (req.headers['eo-pages-host']) {
+      host = req.headers['eo-pages-host'];
+    }
+    
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const url = new URL(req.url, proto + '://' + host);
 
