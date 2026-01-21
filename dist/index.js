@@ -126,7 +126,7 @@ export default function edgeoneAdapter(options = {}) {
                     const { fileList } = await analyzeDependencies(rootDir, serverDir, serverEntryFile, logger, _nftCache);
                     createSimpleServerPackageJson(serverDir);
                     await copyDependencies(rootDir, serverDir, fileList, logger, extraIncludeFiles, excludeFiles);
-                    optimizeNodeModules(serverDir, logger);
+                    optimizeNodeModules(serverDir);
                     createServerEntryFile(serverDir, serverEntryFile);
                 }
                 // Generate routing config (SSR only)
